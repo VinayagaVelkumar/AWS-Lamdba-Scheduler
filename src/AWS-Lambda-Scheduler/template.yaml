@@ -1,0 +1,40 @@
+﻿AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Metadata:
+  AWS::ServerlessRepo::Description: "A serverless app with a scheduled Lambda function"
+  AWS::ServerlessRepo::Author: "Vinayaga Velkumar"
+
+Resources:
+  LambdaLogger:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: D:\Applications\AWS\Lambda Scheduler\AWS-Lamdba-Scheduler\src\AWS-Lambda-Scheduler\bin\Release\net8.0\AWS-Lambda-Scheduler.zip
+      Handler: AWS-Lambda-Scheduler::AWS_Lambda_Scheduler.Function::FunctionHandler
+      Runtime: dotnet8
+      Policies:
+        - AWSLambdaBasicExecutionRole
+      Timeout: 30
+
+  ScheduleRule:
+    Type: AWS::Events::Rule
+    Properties:
+      ScheduleExpression: rate(10 minutes)
+      Targets:
+        - Arn: !GetAtt LambdaLogger.Arn
+          Id: LambdaLogger
+
+  LambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref LambdaLogger
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt ScheduleRule.Arn
+
+Outputs:
+  LambdaLoggerArn:
+    Description: "ARN of the created Lambda function"
+    Value: !GetAtt LambdaLogger.Arn
+  ScheduleRuleName:
+    Description: "Name of the Created EventBridge Rule"
+    Value: !Ref ScheduleRule
